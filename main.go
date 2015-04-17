@@ -1,10 +1,12 @@
 package main
 
 import (
+	"encoding/binary"
 	"flag"
 	"fmt"
 	"github.com/gonium/modbus"
 	"log"
+	"math"
 	"os"
 	"time"
 )
@@ -38,6 +40,8 @@ func main() {
 	if err != nil {
 		fmt.Println("Failed to read from SDM630 device", err)
 	} else {
-		fmt.Println(results)
+		l1Bits := binary.BigEndian.Uint32(results)
+		l1Float := math.Float32frombits(l1Bits)
+		fmt.Printf("L1 voltage: %.2f\n", l1Float)
 	}
 }

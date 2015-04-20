@@ -1,17 +1,17 @@
 package main
 
 import (
-	"encoding/binary"
 	"flag"
 	"fmt"
-	"github.com/gonium/modbus"
+	"github.com/goburrow/modbus"
+	"github.com/gonium/gosdm630"
 	"log"
-	"math"
 	"os"
 	"time"
 )
 
 var rtuDevice = flag.String("rtuDevice", "/dev/ttyUSB0", "Path to serial RTU device")
+var verbose = flag.Bool("verbose", false, "Enables extensive logging")
 
 func init() {
 	flag.Parse()
@@ -27,7 +27,9 @@ func main() {
 	handler.StopBits = 1
 	handler.SlaveId = 1
 	handler.Timeout = 5 * time.Second
-	handler.Logger = log.New(os.Stdout, "test: ", log.LstdFlags)
+	if *verbose {
+		handler.Logger = log.New(os.Stdout, "test: ", log.LstdFlags)
+	}
 
 	err := handler.Connect()
 	if err != nil {
@@ -40,8 +42,6 @@ func main() {
 	if err != nil {
 		fmt.Println("Failed to read from SDM630 device", err)
 	} else {
-		l1Bits := binary.BigEndian.Uint32(results)
-		l1Float := math.Float32frombits(l1Bits)
-		fmt.Printf("L1 voltage: %.2f\n", l1Float)
+		fmt.Printf("L1 voltage: %.2f\n", sdm630.RtuToFloat32(results))
 	}
 }

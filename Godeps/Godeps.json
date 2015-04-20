@@ -1,0 +1,17 @@
+{
+	"ImportPath": "github.com/gonium/gosdm630",
+	"GoVersion": "go1.4.1",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/goburrow/modbus",
+			"Rev": "8c91ed0f6d826f663ddb357d0f3c23944846f023"
+		},
+		{
+			"ImportPath": "github.com/goburrow/serial",
+			"Rev": "db311260569c963fcc447796f01e68cc78b23479"
+		}
+	]
+}

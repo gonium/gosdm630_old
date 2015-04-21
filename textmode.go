@@ -6,15 +6,16 @@ import (
 
 type TextDumper struct {
 	datastream ReadingChannel
+	control    ControlChannel
 }
 
-func NewTextDumper(ds ReadingChannel) *TextDumper {
-	return &TextDumper{datastream: ds}
+func NewTextDumper(ds ReadingChannel, c ControlChannel) *TextDumper {
+	return &TextDumper{datastream: ds, control: c}
 }
 
 func (td *TextDumper) Consume() {
 	for {
 		readings := <-td.datastream
-		fmt.Println(readings)
+		fmt.Printf("%s\n", &readings)
 	}
 }

@@ -38,22 +38,18 @@ func main() {
 	defer handler.Close()
 
 	client := modbus.NewClient(handler)
-	results, err := client.ReadInputRegisters(0x0000, 2)
-	if err != nil {
-		fmt.Println("Failed to read from SDM630 device", err)
-	} else {
-		fmt.Printf("L1 voltage: %.2f\n", sdm630.RtuToFloat32(results))
-	}
 
-	// TODO: Implement control channel etc, see
 	// https://gist.github.com/drio/dd2c4ad72452e3c35e7e
 	var rc = make(sdm630.ReadingChannel)
+	var producerControl = make(sdm630.ControlChannel)
+	var consumerControl = make(sdm630.ControlChannel)
 
-	qe := sdm630.NewQueryEngine(client, rc)
-	td := sdm630.NewTextDumper(rc)
+	qe := sdm630.NewQueryEngine(client, rc, producerControl)
+	td := sdm630.NewTextDumper(rc, consumerControl)
 	go qe.Produce()
 	go td.Consume()
-
-	time.Sleep(5 * time.Second)
-
+	// TODO: Select over control channels, restart serial interface in
+	// case of failures.
+	<-producerControl
+	// shut down the consumer
 }

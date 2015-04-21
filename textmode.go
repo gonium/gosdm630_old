@@ -13,7 +13,7 @@ func NewTextDumper(ds ReadingChannel, c ControlChannel) *TextDumper {
 	return &TextDumper{datastream: ds, control: c}
 }
 
-func (td *TextDumper) Consume() {
+func (td *TextDumper) ConsumeData() {
 	for {
 		readings := <-td.datastream
 		fmt.Printf("%s\n", &readings)

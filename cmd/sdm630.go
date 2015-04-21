@@ -45,9 +45,10 @@ func main() {
 	var consumerControl = make(sdm630.ControlChannel)
 
 	qe := sdm630.NewQueryEngine(client, rc, producerControl)
-	td := sdm630.NewTextDumper(rc, consumerControl)
+	//td := sdm630.NewTextDumper(rc, consumerControl)
+	td := sdm630.NewTextGui(rc, consumerControl)
 	go qe.Produce()
-	go td.Consume()
+	go td.ConsumeData()
 	// TODO: Select over control channels, restart serial interface in
 	// case of failures.
 	<-producerControl

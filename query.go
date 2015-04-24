@@ -47,7 +47,6 @@ func (q *QueryEngine) queryOrFail(opcode uint16) (retval float32) {
 	retval, err := q.retrieveOpCode(opcode)
 	if err != nil {
 		q.control <- ControlReadFailure
-		log.Printf("Failed to run device query: %s", err.Error())
 	}
 	return
 }

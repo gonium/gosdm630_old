@@ -3,7 +3,6 @@ package sdm630
 import (
 	"encoding/binary"
 	"github.com/goburrow/modbus"
-	"log"
 	"math"
 	"time"
 )

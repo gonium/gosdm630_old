@@ -26,7 +26,7 @@ func main() {
 		handler.Parity = "N"
 		handler.StopBits = 1
 		handler.SlaveId = 1
-		handler.Timeout = 5 * time.Second
+		handler.Timeout = 1 * time.Second
 		if *verbose {
 			handler.Logger = log.New(os.Stdout, "test: ", log.LstdFlags)
 			fmt.Printf("Connecting to RTU via %s\n", *rtuDevice)

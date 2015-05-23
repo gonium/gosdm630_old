@@ -28,8 +28,11 @@ type QueryEngine struct {
 	control    ControlChannel
 }
 
-func NewQueryEngine(handler modbus.Client, channel ReadingChannel,
-	c ControlChannel) *QueryEngine {
+func NewQueryEngine(
+	handler modbus.Client,
+	channel ReadingChannel,
+	c ControlChannel,
+) *QueryEngine {
 	return &QueryEngine{client: handler, datastream: channel, control: c}
 }
 

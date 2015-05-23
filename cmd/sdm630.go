@@ -2,11 +2,11 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"github.com/goburrow/modbus"
 	"github.com/gonium/gosdm630"
 	"log"
 	"os"
+	"os/signal"
 	"time"
 )
 
@@ -28,8 +28,8 @@ func main() {
 		handler.SlaveId = 1
 		handler.Timeout = 1 * time.Second
 		if *verbose {
-			handler.Logger = log.New(os.Stdout, "test: ", log.LstdFlags)
-			fmt.Printf("Connecting to RTU via %s\n", *rtuDevice)
+			handler.Logger = log.New(os.Stdout, "sdm630: ", log.LstdFlags)
+			log.Printf("Connecting to RTU via %s\r\n", *rtuDevice)
 		}
 
 		err := handler.Connect()
@@ -44,21 +44,27 @@ func main() {
 		var rc = make(sdm630.ReadingChannel)
 		var producerControl = make(sdm630.ControlChannel)
 		var consumerControl = make(sdm630.ControlChannel)
+		// handle CTRL-C correctly
+		signals := make(chan os.Signal, 1)
+		signal.Notify(signals, os.Interrupt, os.Kill)
 
 		qe := sdm630.NewQueryEngine(client, rc, producerControl)
-		//td := sdm630.NewTextDumper(rc, consumerControl)
-		td := sdm630.NewTextGui(rc, consumerControl)
+		td := sdm630.NewTextDumper(rc, consumerControl)
+		//td := sdm630.NewTextGui(rc, consumerControl)
 		go qe.Produce()
 		go td.ConsumeData()
 		// TODO: Select over control channels, restart serial interface in
 		// case of failures.
 		select {
+		case _ = <-signals:
+			log.Fatal("received SIGTERM, exiting.")
+			break
 		case pm := <-producerControl:
 			if pm == sdm630.ControlReadFailure {
-				log.Printf("Read Failure")
+				log.Println("Read Failure")
 			}
 			if pm == sdm630.ControlClose {
-				log.Printf("Producer closed.")
+				log.Println("Producer closed.")
 			} else {
 				log.Fatal("Unknown control message from producer:", pm)
 			}

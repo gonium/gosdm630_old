@@ -26,7 +26,7 @@ func main() {
 		handler.Parity = "N"
 		handler.StopBits = 1
 		handler.SlaveId = 1
-		handler.Timeout = 500 * time.Millisecond
+		handler.Timeout = 1000 * time.Millisecond
 		if *verbose {
 			handler.Logger = log.New(os.Stdout, "sdm630: ", log.LstdFlags)
 			log.Printf("Connecting to RTU via %s\r\n", *rtuDevice)

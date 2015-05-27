@@ -3,7 +3,9 @@ package sdm630
 import (
 	"encoding/binary"
 	"github.com/goburrow/modbus"
+	"log"
 	"math"
+	"os"
 	"time"
 )
 
@@ -24,16 +26,39 @@ const (
 
 type QueryEngine struct {
 	client     modbus.Client
+	handler    modbus.RTUClientHandler
 	datastream ReadingChannel
 	control    ControlChannel
 }
 
 func NewQueryEngine(
-	handler modbus.Client,
+	rtuDevice string,
+	verbose bool,
 	channel ReadingChannel,
 	c ControlChannel,
 ) *QueryEngine {
-	return &QueryEngine{client: handler, datastream: channel, control: c}
+	// Modbus RTU/ASCII
+	mbhandler := modbus.NewRTUClientHandler(rtuDevice)
+	mbhandler.BaudRate = 9600
+	mbhandler.DataBits = 8
+	mbhandler.Parity = "N"
+	mbhandler.StopBits = 1
+	mbhandler.SlaveId = 1
+	mbhandler.Timeout = 1000 * time.Millisecond
+	if verbose {
+		mbhandler.Logger = log.New(os.Stdout, "RTUClientHandler: ", log.LstdFlags)
+		log.Printf("Connecting to RTU via %s\r\n", rtuDevice)
+	}
+
+	err := mbhandler.Connect()
+	if err != nil {
+		log.Fatal("Failed to connect: ", err)
+	}
+
+	mbclient := modbus.NewClient(mbhandler)
+
+	return &QueryEngine{client: mbclient,
+		handler: *mbhandler, datastream: channel, control: c}
 }
 
 func (q *QueryEngine) retrieveOpCode(opcode uint16) (retval float32,
@@ -49,6 +74,13 @@ func (q *QueryEngine) queryOrFail(opcode uint16) (retval float32) {
 	retval, err := q.retrieveOpCode(opcode)
 	if err != nil {
 		q.control <- ControlReadFailure
+		q.handler.Close()
+		log.Println("Attempting to reconnect to device.")
+		err := q.handler.Connect()
+		if err != nil {
+			log.Fatal("Failed to connect: ", err)
+		}
+		//q.client = modbus.NewClient(q.handler)
 	}
 	return
 }
@@ -73,6 +105,7 @@ func (q *QueryEngine) Produce() {
 		time.Sleep(1 * time.Second)
 	}
 	q.control <- ControlClose
+	q.handler.Close()
 }
 
 func RtuToFloat32(b []byte) (f float32) {

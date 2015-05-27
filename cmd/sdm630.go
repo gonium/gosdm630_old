@@ -26,7 +26,7 @@ func main() {
 		handler.Parity = "N"
 		handler.StopBits = 1
 		handler.SlaveId = 1
-		handler.Timeout = 1 * time.Second
+		handler.Timeout = 500 * time.Millisecond
 		if *verbose {
 			handler.Logger = log.New(os.Stdout, "sdm630: ", log.LstdFlags)
 			log.Printf("Connecting to RTU via %s\r\n", *rtuDevice)
@@ -62,8 +62,7 @@ func main() {
 		case pm := <-producerControl:
 			if pm == sdm630.ControlReadFailure {
 				log.Println("Read Failure")
-			}
-			if pm == sdm630.ControlClose {
+			} else if pm == sdm630.ControlClose {
 				log.Println("Producer closed.")
 			} else {
 				log.Fatal("Unknown control message from producer:", pm)

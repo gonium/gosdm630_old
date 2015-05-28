@@ -74,19 +74,20 @@ func (q *QueryEngine) queryOrFail(opcode uint16) (retval float32) {
 	retval, err := q.retrieveOpCode(opcode)
 	if err != nil {
 		q.control <- ControlReadFailure
-		q.handler.Close()
 		log.Println("Attempting to reconnect to device.")
-		err := q.handler.Connect()
-		if err != nil {
-			log.Fatal("Failed to connect: ", err)
-		}
-		//q.client = modbus.NewClient(q.handler)
+		q.handler.Close()
+		// Hypothesis: Do not reconnect! This allocates file handles that
+		// are not deallocated correctly.
+		//err := q.handler.Connect()
+		//if err != nil {
+		//	log.Fatal("Failed to connect: ", err)
+		//}
+		//q.client = modbus.NewClient(&q.handler)
 	}
 	return
 }
 
 func (q *QueryEngine) Produce() {
-	// First: Query the SDM630 device for all interesting data.
 	for {
 		q.datastream <- Readings{
 			L1Voltage: q.queryOrFail(OpCodeL1Voltage),
@@ -104,8 +105,8 @@ func (q *QueryEngine) Produce() {
 		}
 		time.Sleep(1 * time.Second)
 	}
-	q.control <- ControlClose
 	q.handler.Close()
+	q.control <- ControlClose
 }
 
 func RtuToFloat32(b []byte) (f float32) {

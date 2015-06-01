@@ -27,7 +27,11 @@ func main() {
 		signal.Notify(signals, os.Interrupt, os.Kill)
 
 		qe := sdm630.NewQueryEngine(*rtuDevice, *verbose, rc, producerControl)
-		td := sdm630.NewTextDumper(rc, consumerControl)
+		td, err := sdm630.NewMQTTSubmitter(rc, consumerControl)
+		if err != nil {
+			log.Fatal("Cannot create MQTT connection: ", err)
+		}
+		//td := sdm630.NewTextDumper(rc, consumerControl)
 		//td := sdm630.NewTextGui(rc, consumerControl)
 		go qe.Produce()
 		go td.ConsumeData()

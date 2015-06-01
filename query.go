@@ -22,6 +22,8 @@ const (
 	OpCodeL1PowerFactor = 0x001e
 	OpCodeL2PowerFactor = 0x0020
 	OpCodeL3PowerFactor = 0x0022
+
+	MaxRetryCount = 3
 )
 
 type QueryEngine struct {
@@ -71,20 +73,22 @@ func (q *QueryEngine) retrieveOpCode(opcode uint16) (retval float32,
 }
 
 func (q *QueryEngine) queryOrFail(opcode uint16) (retval float32) {
-	retval, err := q.retrieveOpCode(opcode)
-	if err != nil {
-		q.control <- ControlReadFailure
-		log.Println("Attempting to reconnect to device.")
-		q.handler.Close()
-		// Hypothesis: Do not reconnect! This allocates file handles that
-		// are not deallocated correctly.
-		//err := q.handler.Connect()
-		//if err != nil {
-		//	log.Fatal("Failed to connect: ", err)
-		//}
-		//q.client = modbus.NewClient(&q.handler)
+	var err error
+	for tryCnt := 0; tryCnt < MaxRetryCount; tryCnt++ {
+		retval, err = q.retrieveOpCode(opcode)
+		if err != nil {
+			q.control <- ControlReadFailure
+			//log.Printf("Closing broken handler, reconnecting attempt %d\r\n", tryCnt)
+			// Note: Just close the handler here. If a new handler is manually
+			// created it will create a resource leak (file descriptors). Just
+			// close the handler, the modbus library will recreate one as
+			// needed.
+			q.handler.Close()
+		} else {
+			break
+		}
 	}
-	return
+	return retval
 }
 
 func (q *QueryEngine) Produce() {

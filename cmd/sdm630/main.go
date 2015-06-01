@@ -39,6 +39,7 @@ func main() {
 			break
 		case pm := <-producerControl:
 			if pm == sdm630.ControlReadFailure {
+				// TODO: Collect statistics here.
 				log.Println("Read Failure")
 			} else if pm == sdm630.ControlClose {
 				log.Println("Producer closed.")

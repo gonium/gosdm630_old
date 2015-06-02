@@ -2,8 +2,10 @@ package sdm630
 
 import (
 	"fmt"
+	//TODO: Convert to https://github.com/yosssi/gmq
 	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
 	"log"
+	"time"
 )
 
 type MQTTSubmitter struct {
@@ -19,19 +21,19 @@ var f MQTT.MessageHandler = func(client *MQTT.Client, msg MQTT.Message) {
 }
 
 //define a function for the connection lost handler
-var l MQTT.ConnectionLostHandler = func(client *MQTT.Client, err error) {
+var defaultLostConnectionHandler MQTT.ConnectionLostHandler = func(client *MQTT.Client, err error) {
 	log.Printf("Lost broker connection: %s\r\n", err.Error())
 }
 
 func NewMQTTSubmitter(ds ReadingChannel, cc ControlChannel,
 	brokerurl string, username string, password string, devicename string) (*MQTTSubmitter, error) {
 	opts := MQTT.NewClientOptions().AddBroker(brokerurl)
-	opts.SetClientID("gosdm360")
+	opts.SetClientID("gosdm360_submitter")
 	opts.SetDefaultPublishHandler(f)
-	opts.SetConnectionLostHandler(l)
+	opts.SetConnectionLostHandler(defaultLostConnectionHandler)
 	opts.SetPassword(password)
 	opts.SetUsername(username)
-	opts.SetAutoReconnect(false)
+	opts.SetAutoReconnect(true)
 	c := MQTT.NewClient(opts)
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
 		return nil, token.Error()
@@ -71,4 +73,55 @@ func (ms *MQTTSubmitter) ConsumeData() {
 
 	}
 	ms.mqtt.Disconnect(250)
+}
+
+///////////////////////////////////////////////////////////////////////////
+
+type MQTTSource struct {
+	mqtt       *MQTT.Client
+	devicename string
+	datastream ReadingChannel
+	control    ControlChannel
+}
+
+func NewMQTTSource(ds ReadingChannel, cc ControlChannel,
+	brokerurl string, username string, password string, devicename string) (*MQTTSource, error) {
+	opts := MQTT.NewClientOptions().AddBroker(brokerurl)
+	opts.SetClientID("sdm360_receiver")
+	var forwarder MQTT.MessageHandler = func(client *MQTT.Client, msg MQTT.Message) {
+		// TODO: Put values into ds
+		log.Printf("TOPIC: %s - MSG:%s\r\n", msg.Topic(), msg.Payload())
+	}
+	opts.SetDefaultPublishHandler(forwarder)
+	opts.SetConnectionLostHandler(defaultLostConnectionHandler)
+	opts.SetPassword(password)
+	opts.SetUsername(username)
+	opts.SetAutoReconnect(true)
+
+	opts.OnConnect = func(c *MQTT.Client) {
+		topic := "SDM630/readings/L1/Voltage"
+		log.Printf("Subscribing to %s\r\n", topic)
+		//if token := c.Subscribe(devicename+"/+", 1, forwarder); token.Wait() && token.Error() != nil {
+		if token := c.Subscribe(topic, 0, forwarder); token.WaitTimeout(1*time.Second) && token.Error() != nil {
+
+			panic(token.Error())
+		} else {
+			log.Printf("Subscribed to %s\r\n", topic)
+		}
+
+	}
+
+	c := MQTT.NewClient(opts)
+	if token := c.Connect(); token.Wait() && token.Error() != nil {
+		return nil, token.Error()
+	} else {
+		retval := &MQTTSource{mqtt: c, devicename: devicename, datastream: ds, control: cc}
+		return retval, nil
+	}
+}
+
+func (mq *MQTTSource) Run() {
+	for {
+	}
+	mq.mqtt.Disconnect(250)
 }

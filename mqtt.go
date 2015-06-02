@@ -3,6 +3,7 @@ package sdm630
 import (
 	"fmt"
 	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
+	"log"
 )
 
 type MQTTSubmitter struct {
@@ -13,14 +14,22 @@ type MQTTSubmitter struct {
 
 //define a function for the default message handler
 var f MQTT.MessageHandler = func(client *MQTT.Client, msg MQTT.Message) {
-	fmt.Printf("TOPIC: %s\n", msg.Topic())
-	fmt.Printf("MSG: %s\n", msg.Payload())
+	log.Printf("TOPIC: %s - MSG:%s\r\n", msg.Topic(), msg.Payload())
+}
+
+//define a function for the connection lost handler
+var l MQTT.ConnectionLostHandler = func(client *MQTT.Client, err error) {
+	log.Printf("Lost broker connection: %s\r\n", err.Error())
 }
 
 func NewMQTTSubmitter(ds ReadingChannel, cc ControlChannel) (*MQTTSubmitter, error) {
 	opts := MQTT.NewClientOptions().AddBroker("tcp://localhost:1883")
 	opts.SetClientID("SDM630")
 	opts.SetDefaultPublishHandler(f)
+	opts.SetConnectionLostHandler(l)
+	// opts.SetPassword("")
+	// opts.SetUsername("")
+	opts.SetAutoReconnect(false)
 	c := MQTT.NewClient(opts)
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
 		return nil, token.Error()

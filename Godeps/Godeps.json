@@ -1,10 +1,26 @@
 {
 	"ImportPath": "github.com/gonium/gosdm630",
 	"GoVersion": "go1.4.1",
-	"Packages": [
-		"./..."
-	],
 	"Deps": [
+		{
+			"ImportPath": "code.google.com/p/go-uuid/uuid",
+			"Comment": "null-15",
+			"Rev": "35bc42037350f0078e3c974c6ea690f1926603ab"
+		},
+		{
+			"ImportPath": "code.google.com/p/go.net/websocket",
+			"Comment": "null-138",
+			"Rev": "aa2854272bd57c4e2eedca828d3bbb5851018518"
+		},
+		{
+			"ImportPath": "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git",
+			"Comment": "v0.9.1-8-g1d65364",
+			"Rev": "1d6536402dac4b2528bc23f08ecc318c295c320a"
+		},
+		{
+			"ImportPath": "github.com/gizak/termui",
+			"Rev": "0f56f3acdd254d6d12caea4469e61fb093cd3d96"
+		},
 		{
 			"ImportPath": "github.com/goburrow/modbus",
 			"Rev": "8c91ed0f6d826f663ddb357d0f3c23944846f023"
@@ -12,6 +28,19 @@
 		{
 			"ImportPath": "github.com/goburrow/serial",
 			"Rev": "db311260569c963fcc447796f01e68cc78b23479"
+		},
+		{
+			"ImportPath": "github.com/mattn/go-runewidth",
+			"Comment": "travisish-31-g58a0da4",
+			"Rev": "58a0da4ed7b321c9b5dfeffb7e03ee188fae1c60"
+		},
+		{
+			"ImportPath": "github.com/nsf/termbox-go",
+			"Rev": "bc836fdbcf75184c95c96500ea740e3dd727b5a8"
+		},
+		{
+			"ImportPath": "github.com/zfjagann/golang-ring",
+			"Rev": "17637388c9f6665e2f475e4beec439e6fc19fee9"
 		}
 	]
 }

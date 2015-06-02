@@ -8,6 +8,7 @@ import (
 
 type MQTTSubmitter struct {
 	mqtt       *MQTT.Client
+	devicename string
 	datastream ReadingChannel
 	control    ControlChannel
 }
@@ -22,19 +23,20 @@ var l MQTT.ConnectionLostHandler = func(client *MQTT.Client, err error) {
 	log.Printf("Lost broker connection: %s\r\n", err.Error())
 }
 
-func NewMQTTSubmitter(ds ReadingChannel, cc ControlChannel) (*MQTTSubmitter, error) {
-	opts := MQTT.NewClientOptions().AddBroker("tcp://localhost:1883")
-	opts.SetClientID("SDM630")
+func NewMQTTSubmitter(ds ReadingChannel, cc ControlChannel,
+	brokerurl string, username string, password string, devicename string) (*MQTTSubmitter, error) {
+	opts := MQTT.NewClientOptions().AddBroker(brokerurl)
+	opts.SetClientID("gosdm360")
 	opts.SetDefaultPublishHandler(f)
 	opts.SetConnectionLostHandler(l)
-	// opts.SetPassword("")
-	// opts.SetUsername("")
+	opts.SetPassword(password)
+	opts.SetUsername(username)
 	opts.SetAutoReconnect(false)
 	c := MQTT.NewClient(opts)
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
 		return nil, token.Error()
 	} else {
-		return &MQTTSubmitter{mqtt: c, datastream: ds, control: cc}, nil
+		return &MQTTSubmitter{mqtt: c, devicename: devicename, datastream: ds, control: cc}, nil
 	}
 }
 
@@ -50,10 +52,10 @@ func (ms *MQTTSubmitter) submitReading(basechannel string,
 }
 
 func (ms *MQTTSubmitter) ConsumeData() {
+	basechannel := fmt.Sprintf("%s/readings", ms.devicename)
 	for {
 		// TODO: Read on control, terminate goroutine when
 		readings := <-ms.datastream
-		basechannel := "SDM630/foo"
 		ms.submitReading(basechannel, "L1/Voltage", readings.L1Voltage)
 		ms.submitReading(basechannel, "L2/Voltage", readings.L2Voltage)
 		ms.submitReading(basechannel, "L3/Voltage", readings.L3Voltage)

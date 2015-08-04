@@ -10,7 +10,7 @@ import (
 
 var rtuDevice = flag.String("rtuDevice", "/dev/ttyUSB0", "Path to serial RTU device")
 var verbose = flag.Bool("verbose", false, "Enables extensive logging")
-var brokerurl = flag.String("broker", "tcp://localhost:1883", "MQTT server url")
+var broker = flag.String("broker", "localhost:1883", "MQTT server address")
 var username = flag.String("user", "", "Username for connecting to the MQTT server")
 var password = flag.String("pass", "", "Password for connecting to the MQTT server")
 var devicename = flag.String("name", "", "The name of the current measurement device")
@@ -35,10 +35,11 @@ func main() {
 
 		qe := sdm630.NewQueryEngine(*rtuDevice, *verbose, rc, producerControl)
 		td, err := sdm630.NewMQTTSubmitter(rc, consumerControl,
-			*brokerurl, *username, *password, *devicename)
+			*broker, *username, *password, *devicename)
 		if err != nil {
 			log.Fatal("Cannot create MQTT connection: ", err)
 		}
+		defer td.Close()
 		//td := sdm630.NewTextDumper(rc, consumerControl)
 		//td := sdm630.NewTextGui(rc, consumerControl)
 		go qe.Produce()

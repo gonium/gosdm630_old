@@ -2,54 +2,56 @@ package sdm630
 
 import (
 	"fmt"
-	//TODO: Convert to https://github.com/yosssi/gmq
-	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
+	"github.com/yosssi/gmq/mqtt"
+	"github.com/yosssi/gmq/mqtt/client"
 	"log"
-	"time"
 )
 
 type MQTTSubmitter struct {
-	mqtt       *MQTT.Client
+	mqtt       *client.Client
 	devicename string
 	datastream ReadingChannel
 	control    ControlChannel
 }
 
-//define a function for the default message handler
-var f MQTT.MessageHandler = func(client *MQTT.Client, msg MQTT.Message) {
-	log.Printf("TOPIC: %s - MSG:%s\r\n", msg.Topic(), msg.Payload())
-}
-
-//define a function for the connection lost handler
-var defaultLostConnectionHandler MQTT.ConnectionLostHandler = func(client *MQTT.Client, err error) {
-	log.Printf("Lost broker connection: %s\r\n", err.Error())
-}
-
 func NewMQTTSubmitter(ds ReadingChannel, cc ControlChannel,
 	brokerurl string, username string, password string, devicename string) (*MQTTSubmitter, error) {
-	opts := MQTT.NewClientOptions().AddBroker(brokerurl)
-	opts.SetClientID("gosdm360_submitter")
-	opts.SetDefaultPublishHandler(f)
-	opts.SetConnectionLostHandler(defaultLostConnectionHandler)
-	opts.SetPassword(password)
-	opts.SetUsername(username)
-	opts.SetAutoReconnect(false)
-	c := MQTT.NewClient(opts)
-	if token := c.Connect(); token.Wait() && token.Error() != nil {
-		return nil, token.Error()
+	mqttclient := client.New(&client.Options{
+		ErrorHandler: func(err error) {
+			log.Printf("MQTT error occured: %s\n", err)
+		},
+	})
+	err := mqttclient.Connect(&client.ConnectOptions{
+		Network:      "tcp",
+		Address:      brokerurl,
+		ClientID:     []byte("gosdm360_submitter:" + devicename),
+		CleanSession: true,
+		KeepAlive:    30,
+		WillQoS:      mqtt.QoS0,
+	})
+	if err != nil {
+		return nil, err
 	} else {
-		return &MQTTSubmitter{mqtt: c, devicename: devicename, datastream: ds, control: cc}, nil
+		log.Println("Connected to broker.")
+		return &MQTTSubmitter{mqtt: mqttclient, devicename: devicename, datastream: ds, control: cc}, nil
 	}
+}
+
+func (ms *MQTTSubmitter) Close() {
+	ms.mqtt.Terminate()
 }
 
 func (ms *MQTTSubmitter) submitReading(basechannel string,
 	subchannel string, reading float32) {
 	payload := fmt.Sprintf("%f", reading)
 	channel := fmt.Sprintf("%s/%s", basechannel, subchannel)
-	token := ms.mqtt.Publish(channel, 0, false, payload)
-	token.Wait()
-	if token.Error() != nil {
-		fmt.Printf("Error: >%s< while submitting %s\r\n", token.Error().Error(), payload)
+	err := ms.mqtt.Publish(&client.PublishOptions{
+		QoS:       mqtt.QoS0,
+		TopicName: []byte(channel),
+		Message:   []byte(payload),
+	})
+	if err != nil {
+		log.Printf("Error: >%s< while submitting %s\r\n", err, payload)
 	}
 }
 
@@ -72,13 +74,13 @@ func (ms *MQTTSubmitter) ConsumeData() {
 		ms.submitReading(basechannel, "L3/CosPhi", readings.L3CosPhi)
 
 	}
-	ms.mqtt.Disconnect(250)
+	ms.mqtt.Terminate()
 }
 
 ///////////////////////////////////////////////////////////////////////////
 
 type MQTTSource struct {
-	mqtt       *MQTT.Client
+	mqtt       *client.Client
 	devicename string
 	datastream ReadingChannel
 	control    ControlChannel
@@ -86,42 +88,45 @@ type MQTTSource struct {
 
 func NewMQTTSource(ds ReadingChannel, cc ControlChannel,
 	brokerurl string, username string, password string, devicename string) (*MQTTSource, error) {
-	opts := MQTT.NewClientOptions().AddBroker(brokerurl)
-	opts.SetClientID("sdm360_receiver")
-	var forwarder MQTT.MessageHandler = func(client *MQTT.Client, msg MQTT.Message) {
-		// TODO: Put values into ds
-		log.Printf("TOPIC: %s - MSG:%s\r\n", msg.Topic(), msg.Payload())
-	}
-	opts.SetDefaultPublishHandler(forwarder)
-	opts.SetConnectionLostHandler(defaultLostConnectionHandler)
-	opts.SetPassword(password)
-	opts.SetUsername(username)
-	opts.SetAutoReconnect(true)
-
-	opts.OnConnect = func(c *MQTT.Client) {
-		topic := "SDM630/readings/L1/Voltage"
-		log.Printf("Subscribing to %s\r\n", topic)
-		//if token := c.Subscribe(devicename+"/+", 1, forwarder); token.Wait() && token.Error() != nil {
-		if token := c.Subscribe(topic, 0, forwarder); token.WaitTimeout(1*time.Second) && token.Error() != nil {
-
-			panic(token.Error())
-		} else {
-			log.Printf("Subscribed to %s\r\n", topic)
-		}
-
-	}
-
-	c := MQTT.NewClient(opts)
-	if token := c.Connect(); token.Wait() && token.Error() != nil {
-		return nil, token.Error()
+	mqttclient := client.New(&client.Options{
+		ErrorHandler: func(err error) {
+			log.Printf("MQTT error occured: %s\n", err)
+		},
+	})
+	err := mqttclient.Connect(&client.ConnectOptions{
+		Network:      "tcp",
+		Address:      brokerurl,
+		ClientID:     []byte("gosdm360_receiver:" + devicename),
+		CleanSession: true,
+		KeepAlive:    30,
+		WillQoS:      mqtt.QoS0,
+	})
+	if err != nil {
+		return nil, err
 	} else {
-		retval := &MQTTSource{mqtt: c, devicename: devicename, datastream: ds, control: cc}
-		return retval, nil
+		log.Println("Connected to broker.")
+		return &MQTTSource{mqtt: mqttclient, devicename: devicename, datastream: ds, control: cc}, nil
 	}
 }
 
-func (mq *MQTTSource) Run() {
-	for {
-	}
-	mq.mqtt.Disconnect(250)
+func (ms *MQTTSource) Close() {
+	ms.mqtt.Terminate()
+}
+
+// TODO: Inject handler as a function parameter
+func (mq *MQTTSource) Subscribe(topic string) error {
+	topicfilter := fmt.Sprintf("%s/#", topic)
+	log.Println("Subscribing to", topicfilter)
+	return mq.mqtt.Subscribe(&client.SubscribeOptions{
+		SubReqs: []*client.SubReq{
+			&client.SubReq{
+				TopicFilter: []byte(topicfilter),
+				QoS:         mqtt.QoS0,
+				// Define the processing of the message handler.
+				Handler: func(topicName, message []byte) {
+					log.Println(string(topicName), string(message))
+				},
+			},
+		},
+	})
 }

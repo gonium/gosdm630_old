@@ -9,7 +9,7 @@ import (
 )
 
 var verbose = flag.Bool("verbose", false, "Enables extensive logging")
-var brokerurl = flag.String("broker", "tcp://localhost:1883", "MQTT server url")
+var brokerurl = flag.String("broker", "localhost:1883", "MQTT server address")
 var username = flag.String("user", "", "Username for connecting to the MQTT server")
 var password = flag.String("pass", "", "Password for connecting to the MQTT server")
 var devicename = flag.String("name", "", "The name of the current measurement device")
@@ -32,17 +32,13 @@ func main() {
 		signals := make(chan os.Signal, 1)
 		signal.Notify(signals, os.Interrupt, os.Kill)
 
-		// TODO: Replace q/ mqtt foo
-		//qe := sdm630.NewQueryEngine(*rtuDevice, *verbose, rc, sourceControl)
 		source, err := sdm630.NewMQTTSource(rc, sourceControl,
 			*brokerurl, *username, *password, *devicename)
+		defer source.Close()
 		if err != nil {
 			log.Fatal("Cannot create MQTT connection: ", err)
 		}
-		//source := sdm630.NewTextDumper(rc, sinkControl)
-		//source := sdm630.NewTextGui(rc, sinkControl)
-		//go qe.Produce()
-		go source.Run()
+		source.Subscribe(*devicename)
 		select {
 		case _ = <-signals:
 			log.Fatal("received SIGTERM, exiting.")

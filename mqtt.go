@@ -33,7 +33,7 @@ func NewMQTTSubmitter(ds ReadingChannel, cc ControlChannel,
 	opts.SetConnectionLostHandler(defaultLostConnectionHandler)
 	opts.SetPassword(password)
 	opts.SetUsername(username)
-	opts.SetAutoReconnect(true)
+	opts.SetAutoReconnect(false)
 	c := MQTT.NewClient(opts)
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
 		return nil, token.Error()

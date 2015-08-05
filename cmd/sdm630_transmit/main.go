@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"github.com/gonium/gosdm630"
 	"log"
 	"os"
@@ -34,8 +35,9 @@ func main() {
 		signal.Notify(signals, os.Interrupt, os.Kill)
 
 		qe := sdm630.NewQueryEngine(*rtuDevice, *verbose, rc, producerControl)
+		topic := fmt.Sprintf("readings/%s", *devicename)
 		td, err := sdm630.NewMQTTSubmitter(rc, consumerControl,
-			*broker, *username, *password, *devicename)
+			*broker, *username, *password, topic)
 		if err != nil {
 			log.Fatal("Cannot create MQTT connection: ", err)
 		}

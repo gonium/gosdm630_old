@@ -2,10 +2,12 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"github.com/gonium/gosdm630"
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 )
 
 var verbose = flag.Bool("verbose", false, "Enables extensive logging")
@@ -18,6 +20,20 @@ func init() {
 	flag.Parse()
 	if len(*devicename) == 0 {
 		log.Fatal("Please specify a name for this device (-name=<YOURID>)")
+	}
+}
+
+func printReadings(topicName []byte, message []byte) {
+	s := strings.Split(string(topicName), "/")
+	msgtype, devicename, measurement, subcategory := s[0], s[1], s[2],
+		s[3]
+	switch msgtype {
+	case "readings":
+		log.Printf("%s: %s(%s) = %s", devicename, measurement, subcategory,
+			string(message))
+		break
+	default:
+		log.Println("unknown message type, topic was ", string(topicName))
 	}
 }
 
@@ -38,7 +54,8 @@ func main() {
 		if err != nil {
 			log.Fatal("Cannot create MQTT connection: ", err)
 		}
-		source.Subscribe(*devicename)
+		topic := fmt.Sprintf("readings/%s", *devicename)
+		source.Subscribe(topic, printReadings)
 		select {
 		case _ = <-signals:
 			log.Fatal("received SIGTERM, exiting.")

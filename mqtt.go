@@ -6,6 +6,7 @@ import (
 	"github.com/yosssi/gmq/mqtt"
 	"github.com/yosssi/gmq/mqtt/client"
 	"log"
+	"os"
 )
 
 func GenUUID(prefix string) string {
@@ -28,10 +29,13 @@ func NewMQTTSubmitter(ds ReadingChannel, cc ControlChannel,
 			log.Printf("MQTT error occured: %s\n", err)
 		},
 	})
+	log.Printf("Connecting as user %s to broker %s", username, brokerurl)
 	err := mqttclient.Connect(&client.ConnectOptions{
 		Network:      "tcp",
 		Address:      brokerurl,
 		ClientID:     []byte(GenUUID("gosdm360-submitter")),
+		UserName:     []byte(username),
+		Password:     []byte(password),
 		CleanSession: true,
 		KeepAlive:    30,
 		WillQoS:      mqtt.QoS0,
@@ -59,6 +63,8 @@ func (ms *MQTTSubmitter) submitReading(basechannel string,
 	})
 	if err != nil {
 		log.Printf("Error: >%s< while submitting %s\r\n", err, payload)
+		ms.Close()
+		os.Exit(1)
 	}
 }
 
@@ -97,12 +103,16 @@ func NewMQTTSource(ds ReadingChannel, cc ControlChannel,
 	mqttclient := client.New(&client.Options{
 		ErrorHandler: func(err error) {
 			log.Printf("MQTT error occured: %s\n", err)
+			os.Exit(1)
 		},
 	})
+	log.Printf("Connecting as user %s to broker %s", username, brokerurl)
 	err := mqttclient.Connect(&client.ConnectOptions{
 		Network:      "tcp",
 		Address:      brokerurl,
 		ClientID:     []byte(GenUUID("gosdm360-receiver")),
+		UserName:     []byte(username),
+		Password:     []byte(password),
 		CleanSession: true,
 		KeepAlive:    30,
 		WillQoS:      mqtt.QoS0,
@@ -119,7 +129,6 @@ func (ms *MQTTSource) Close() {
 	ms.mqtt.Terminate()
 }
 
-// TODO: Inject handler as a function parameter
 func (mq *MQTTSource) Subscribe(topic string, handler func(topicname, message []byte)) error {
 	topicfilter := fmt.Sprintf("%s/#", topic)
 	log.Println("Subscribing to", topicfilter)

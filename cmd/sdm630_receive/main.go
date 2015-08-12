@@ -37,10 +37,22 @@ func printReadings(topicName []byte, message []byte) {
 	}
 }
 
+func fileLogReadings(topicName []byte, message []byte) {
+	s := strings.Split(string(topicName), "/")
+	msgtype, devicename, measurement, subcategory := s[0], s[1], s[2],
+		s[3]
+	switch msgtype {
+	case "readings":
+		log.Printf("%s: %s(%s) = %s", devicename, measurement, subcategory,
+			string(message))
+		break
+	default:
+		log.Println("unknown message type, topic was ", string(topicName))
+	}
+}
+
 func main() {
 	for {
-
-		// https://gist.github.com/drio/dd2c4ad72452e3c35e7e
 		var rc = make(sdm630.ReadingChannel)
 		var sourceControl = make(sdm630.ControlChannel)
 		//var sinkControl = make(sdm630.ControlChannel)

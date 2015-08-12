@@ -28,6 +28,7 @@ const (
 
 type QueryEngine struct {
 	client     modbus.Client
+	interval   int
 	handler    modbus.RTUClientHandler
 	datastream ReadingChannel
 	control    ControlChannel
@@ -35,6 +36,7 @@ type QueryEngine struct {
 
 func NewQueryEngine(
 	rtuDevice string,
+	interval int,
 	verbose bool,
 	channel ReadingChannel,
 	c ControlChannel,
@@ -59,7 +61,7 @@ func NewQueryEngine(
 
 	mbclient := modbus.NewClient(mbhandler)
 
-	return &QueryEngine{client: mbclient,
+	return &QueryEngine{client: mbclient, interval: interval,
 		handler: *mbhandler, datastream: channel, control: c}
 }
 
@@ -107,7 +109,7 @@ func (q *QueryEngine) Produce() {
 			L2CosPhi:  q.queryOrFail(OpCodeL2PowerFactor),
 			L3CosPhi:  q.queryOrFail(OpCodeL3PowerFactor),
 		}
-		time.Sleep(1 * time.Second)
+		time.Sleep(time.Duration(q.interval) * time.Second)
 	}
 	q.handler.Close()
 	q.control <- ControlClose

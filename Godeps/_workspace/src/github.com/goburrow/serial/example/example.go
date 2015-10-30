@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/goburrow/serial"
+	"github.com/gonium/gosdm630/Godeps/_workspace/src/github.com/goburrow/serial"
 )
 
 var address = "/dev/ttyUSB0"

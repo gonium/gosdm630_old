@@ -5,7 +5,7 @@
 package modbus
 
 import (
-	"github.com/goburrow/serial"
+	"github.com/gonium/gosdm630/Godeps/_workspace/src/github.com/goburrow/serial"
 )
 
 const (

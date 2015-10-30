@@ -2,7 +2,7 @@ package sdm630
 
 import (
 	"encoding/binary"
-	"github.com/goburrow/modbus"
+	"github.com/gonium/gosdm630/Godeps/_workspace/src/github.com/goburrow/modbus"
 	"log"
 	"math"
 	"os"

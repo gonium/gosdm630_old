@@ -2,7 +2,7 @@ package sdm630
 
 import (
 	"fmt"
-	"github.com/zfjagann/golang-ring"
+	"github.com/gonium/gosdm630/Godeps/_workspace/src/github.com/zfjagann/golang-ring"
 )
 
 type MeasurementCache struct {

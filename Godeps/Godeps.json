@@ -3,34 +3,12 @@
 	"GoVersion": "go1.4.1",
 	"Deps": [
 		{
-			"ImportPath": "github.com/gizak/termui",
-			"Rev": "0f56f3acdd254d6d12caea4469e61fb093cd3d96"
-		},
-		{
 			"ImportPath": "github.com/goburrow/modbus",
 			"Rev": "8c91ed0f6d826f663ddb357d0f3c23944846f023"
 		},
 		{
 			"ImportPath": "github.com/goburrow/serial",
 			"Rev": "db311260569c963fcc447796f01e68cc78b23479"
-		},
-		{
-			"ImportPath": "github.com/mattn/go-runewidth",
-			"Comment": "travisish-31-g58a0da4",
-			"Rev": "58a0da4ed7b321c9b5dfeffb7e03ee188fae1c60"
-		},
-		{
-			"ImportPath": "github.com/nsf/termbox-go",
-			"Rev": "bc836fdbcf75184c95c96500ea740e3dd727b5a8"
-		},
-		{
-			"ImportPath": "github.com/satori/go.uuid",
-			"Rev": "6b8e5b55d20d01ad47ecfe98e5171688397c61e9"
-		},
-		{
-			"ImportPath": "github.com/yosssi/gmq/mqtt",
-			"Comment": "v0.0.1-6-gb30bf69",
-			"Rev": "b30bf69d836502b5779cbe1781034d2c1ca54d3f"
 		},
 		{
 			"ImportPath": "github.com/zfjagann/golang-ring",

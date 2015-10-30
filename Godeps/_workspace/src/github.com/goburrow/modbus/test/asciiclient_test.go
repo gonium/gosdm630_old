@@ -9,7 +9,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/goburrow/modbus"
+	"github.com/gonium/gosdm630/Godeps/_workspace/src/github.com/goburrow/modbus"
 )
 
 const (

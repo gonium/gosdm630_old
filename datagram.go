@@ -49,3 +49,53 @@ func (r *Readings) String() string {
 func (r *Readings) JSON(w io.Writer) error {
 	return json.NewEncoder(w).Encode(r)
 }
+
+/*
+* Adds two readings. The individual values are added except for
+* the time: the latter of the two times is copied over to the result
+ */
+func (lhs *Readings) add(rhs *Readings) (retval Readings) {
+	retval = Readings{
+		L1Voltage: lhs.L1Voltage + rhs.L1Voltage,
+		L2Voltage: lhs.L2Voltage + rhs.L2Voltage,
+		L3Voltage: lhs.L3Voltage + rhs.L3Voltage,
+		L1Current: lhs.L1Current + rhs.L1Current,
+		L2Current: lhs.L2Current + rhs.L2Current,
+		L3Current: lhs.L3Current + rhs.L3Current,
+		L1Power:   lhs.L1Power + rhs.L1Power,
+		L2Power:   lhs.L2Power + rhs.L2Power,
+		L3Power:   lhs.L3Power + rhs.L3Power,
+		L1CosPhi:  lhs.L1CosPhi + rhs.L1CosPhi,
+		L2CosPhi:  lhs.L2CosPhi + rhs.L2CosPhi,
+		L3CosPhi:  lhs.L3CosPhi + rhs.L3CosPhi,
+	}
+	if lhs.Time.After(rhs.Time) {
+		retval.Time = lhs.Time
+	} else {
+		retval.Time = rhs.Time
+	}
+	return retval
+}
+
+/*
+* Dive a reading by an integer. The individual values are divided except
+* for the time: it is simply copied over to the result
+ */
+func (lhs *Readings) divide(scalar float32) (retval Readings) {
+	retval = Readings{
+		L1Voltage: lhs.L1Voltage / scalar,
+		L2Voltage: lhs.L2Voltage / scalar,
+		L3Voltage: lhs.L3Voltage / scalar,
+		L1Current: lhs.L1Current / scalar,
+		L2Current: lhs.L2Current / scalar,
+		L3Current: lhs.L3Current / scalar,
+		L1Power:   lhs.L1Power / scalar,
+		L2Power:   lhs.L2Power / scalar,
+		L3Power:   lhs.L3Power / scalar,
+		L1CosPhi:  lhs.L1CosPhi / scalar,
+		L2CosPhi:  lhs.L2CosPhi / scalar,
+		L3CosPhi:  lhs.L3CosPhi / scalar,
+	}
+	retval.Time = lhs.Time
+	return retval
+}

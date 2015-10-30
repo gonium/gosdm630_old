@@ -31,7 +31,6 @@ type QueryEngine struct {
 	interval   int
 	handler    modbus.RTUClientHandler
 	datastream ReadingChannel
-	control    ControlChannel
 }
 
 func NewQueryEngine(
@@ -39,7 +38,6 @@ func NewQueryEngine(
 	interval int,
 	verbose bool,
 	channel ReadingChannel,
-	c ControlChannel,
 ) *QueryEngine {
 	// Modbus RTU/ASCII
 	mbhandler := modbus.NewRTUClientHandler(rtuDevice)
@@ -62,7 +60,7 @@ func NewQueryEngine(
 	mbclient := modbus.NewClient(mbhandler)
 
 	return &QueryEngine{client: mbclient, interval: interval,
-		handler: *mbhandler, datastream: channel, control: c}
+		handler: *mbhandler, datastream: channel}
 }
 
 func (q *QueryEngine) retrieveOpCode(opcode uint16) (retval float32,
@@ -76,19 +74,23 @@ func (q *QueryEngine) retrieveOpCode(opcode uint16) (retval float32,
 
 func (q *QueryEngine) queryOrFail(opcode uint16) (retval float32) {
 	var err error
-	for tryCnt := 0; tryCnt < MaxRetryCount; tryCnt++ {
+	tryCnt := 0
+	for tryCnt = 0; tryCnt < MaxRetryCount; tryCnt++ {
 		retval, err = q.retrieveOpCode(opcode)
 		if err != nil {
-			q.control <- ControlReadFailure
-			//log.Printf("Closing broken handler, reconnecting attempt %d\r\n", tryCnt)
+			log.Printf("Closing broken handler, reconnecting attempt %d\r\n", tryCnt)
 			// Note: Just close the handler here. If a new handler is manually
 			// created it will create a resource leak (file descriptors). Just
 			// close the handler, the modbus library will recreate one as
 			// needed.
 			q.handler.Close()
+			time.Sleep(time.Duration(1) * time.Second)
 		} else {
 			break
 		}
+	}
+	if tryCnt == MaxRetryCount {
+		log.Fatal("Cannot query the sensor, reached maximum retry count.")
 	}
 	return retval
 }
@@ -96,6 +98,7 @@ func (q *QueryEngine) queryOrFail(opcode uint16) (retval float32) {
 func (q *QueryEngine) Produce() {
 	for {
 		q.datastream <- Readings{
+			Time:      time.Now(),
 			L1Voltage: q.queryOrFail(OpCodeL1Voltage),
 			L2Voltage: q.queryOrFail(OpCodeL2Voltage),
 			L3Voltage: q.queryOrFail(OpCodeL3Voltage),
@@ -112,7 +115,6 @@ func (q *QueryEngine) Produce() {
 		time.Sleep(time.Duration(q.interval) * time.Second)
 	}
 	q.handler.Close()
-	q.control <- ControlClose
 }
 
 func RtuToFloat32(b []byte) (f float32) {

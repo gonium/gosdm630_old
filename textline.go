@@ -6,11 +6,10 @@ import (
 
 type TextDumper struct {
 	datastream ReadingChannel
-	control    ControlChannel
 }
 
-func NewTextDumper(ds ReadingChannel, c ControlChannel) *TextDumper {
-	return &TextDumper{datastream: ds, control: c}
+func NewTextDumper(ds ReadingChannel) *TextDumper {
+	return &TextDumper{datastream: ds}
 }
 
 func (td *TextDumper) ConsumeData() {
